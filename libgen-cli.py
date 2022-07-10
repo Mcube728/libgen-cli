@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlencode
 from tabulate import tabulate
 from urllib.parse import unquote
+from urllib.parse import urljoin
 from tqdm import tqdm
 
 MAX_CHAR_AUTH = 25 # Maximum characters displayed for the author. Change according to N_AUTHORS.
@@ -88,6 +89,7 @@ def parseBooks(books):
         book_download = {
             'ID':identifier, 
             'Title': title, 
+            'File type': extension,
             'Mirrors': mirror_list, 
             'MD5': md5
         }   # Book metadata and mirror list for downloading the book
@@ -133,19 +135,17 @@ def pickBook(page, table, numberofbooks, mirrors):
 
 
 def getBook(mirrors):
-    #print('\nSnitches get stiches,\nWitches live in ditches,\nYou my friend, get no bitches.\n')
-    print(mirrors)
     print(f'=====\nThis book can be downloaded from these mirrors:')
     m = mirrors['Mirrors']
     for key, value in m.items():
         print(f'{key}: {value}')
     mirror = int(input('What mirror do you want to choose? '))
-    for key, value in m.items():
-        if mirror is key:
-            mirror1(value)
+    if mirror == 1:
+        mirror1(m[mirror])
+    elif mirror == 2:
+        mirror2(m[mirror], mirrors['File type'])
 
 def mirror1(mirror):
-    completed = False
     r = requests.get(mirror)
     s = BeautifulSoup(r.text, 'html.parser')
     download_url = s.find('td', {'id':'info'}).find('h2').find('a').get('href')
@@ -153,6 +153,17 @@ def mirror1(mirror):
     idx = title.rfind('/')
     title = title[idx+1:]
     download(download_url, title)
+
+def mirror2(mirror, filetype):
+    domain = mirror[:mirror.rfind('/')]
+    r = requests.get(mirror)
+    s = BeautifulSoup(r.text, 'html.parser')
+    download_url = s.find('td', {'align':'center'}).find('a').get('href')
+    download_url = urljoin(domain, download_url)
+    title = str(s.find_all('td')[7])
+    title = title[11:title.find("<br/>")]+f'.{filetype}'
+    download(download_url, title)
+
 
 def download(url, title):
     r = requests.get(url, stream=True)
