@@ -135,7 +135,7 @@ def pickBook(page, table, numberofbooks, mirrors):
 def getBook(mirrors):
     #print('\nSnitches get stiches,\nWitches live in ditches,\nYou my friend, get no bitches.\n')
     print(mirrors)
-    print(f'\nThis book can be downloaded from these mirrors:')
+    print(f'=====\nThis book can be downloaded from these mirrors:')
     m = mirrors['Mirrors']
     for key, value in m.items():
         print(f'{key}: {value}')
@@ -158,7 +158,7 @@ def download(url, title):
     r = requests.get(url, stream=True)
     total_size= int(r.headers.get('content-length', 0))
     block = 1024 #1 Kibibyte
-    print(f'\nDownloading {title}')
+    print(f'=====\nDownloading {title}')
     progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
     with open(title, 'wb') as file:
         for data in r.iter_content(block):
