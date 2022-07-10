@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlencode
 from tabulate import tabulate
+from urllib.parse import unquote
 
 MAX_CHAR_AUTH = 25 # Maximum characters displayed for the author. Change according to N_AUTHORS.
 MAX_CHAR_TITLE = 50 # Maximum characters displayed for the book title
@@ -113,7 +114,7 @@ def pickBook(page, table, numberofbooks, mirrors):
                     while True:
                         choice = input('Is this the book you are looking for?(yes/no) ').lower()
                         if choice == 'yes':
-                            getBook(i['Mirrors']);return False
+                            getBook(i);return False
                         elif choice == 'no':
                             break
                         else:
@@ -132,19 +133,41 @@ def pickBook(page, table, numberofbooks, mirrors):
 
 def getBook(mirrors):
     #print('\nSnitches get stiches,\nWitches live in ditches,\nYou my friend, get no bitches.\n')
+    print(mirrors)
     print(f'\nThis book can be downloaded from these mirrors:')
-    for key, value in mirrors.items():
+    m = mirrors['Mirrors']
+    for key, value in m.items():
         print(f'{key}: {value}')
     mirror = int(input('What mirror do you want to choose? '))
-    for key, value in mirrors.items():
+    for key, value in m.items():
         if mirror is key:
-            print(f'You have chosen {key}:{value}')
-            mirror = {key:value}
-            print(mirror)
+            print(f'You have chosen mirror {key}:{value}')
+            mirror1(value)
 
-def mirror1():
-    print()   
-    
+def load():
+    '''
+    A very simple loading animation. 
+    Credit: https://stackoverflow.com/questions/7039114/waiting-animation-in-command-prompt-python
+    '''
+    animation = "|/-\\"
+    idx = 0
+    while True:
+        print(' ',animation[idx % len(animation)], end="\r")
+        idx += 1
+        time.sleep(0.1)
+
+def mirror1(mirror):
+    completed = False
+    r = requests.get(mirror)
+    print(r.status_code)
+    s = BeautifulSoup(r.text, 'html.parser')
+    data = s.find('td', {'id':'info'}).find('h2').find('a').get('href')
+    print(f'data: {data}')
+    title = unquote(data)
+    idx = title.rfind('/')
+    title = title[idx+1:]
+    print(f'Decoded: {title}')
+
 if __name__ == '__main__':
     books = []
     mirrors = []
