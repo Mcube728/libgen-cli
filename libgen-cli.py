@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlencode
 from tabulate import tabulate
 from urllib.parse import unquote
+from tqdm import tqdm
 
 MAX_CHAR_AUTH = 25 # Maximum characters displayed for the author. Change according to N_AUTHORS.
 MAX_CHAR_TITLE = 50 # Maximum characters displayed for the book title
@@ -141,32 +142,31 @@ def getBook(mirrors):
     mirror = int(input('What mirror do you want to choose? '))
     for key, value in m.items():
         if mirror is key:
-            print(f'You have chosen mirror {key}:{value}')
             mirror1(value)
-
-def load():
-    '''
-    A very simple loading animation. 
-    Credit: https://stackoverflow.com/questions/7039114/waiting-animation-in-command-prompt-python
-    '''
-    animation = "|/-\\"
-    idx = 0
-    while True:
-        print(' ',animation[idx % len(animation)], end="\r")
-        idx += 1
-        time.sleep(0.1)
 
 def mirror1(mirror):
     completed = False
     r = requests.get(mirror)
-    print(r.status_code)
     s = BeautifulSoup(r.text, 'html.parser')
-    data = s.find('td', {'id':'info'}).find('h2').find('a').get('href')
-    print(f'data: {data}')
-    title = unquote(data)
+    download_url = s.find('td', {'id':'info'}).find('h2').find('a').get('href')
+    title = unquote(download_url)
     idx = title.rfind('/')
     title = title[idx+1:]
-    print(f'Decoded: {title}')
+    download(download_url, title)
+
+def download(url, title):
+    r = requests.get(url, stream=True)
+    total_size= int(r.headers.get('content-length', 0))
+    block = 1024 #1 Kibibyte
+    print(f'\nDownloading {title}')
+    progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
+    with open(title, 'wb') as file:
+        for data in r.iter_content(block):
+            progress_bar.update(len(data))
+            file.write(data)
+    progress_bar.close()
+    if total_size != 0 and progress_bar.n != total_size:
+        print("ERROR, something went wrong")
 
 if __name__ == '__main__':
     books = []
