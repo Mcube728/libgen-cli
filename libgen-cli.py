@@ -205,6 +205,31 @@ def mirror2(mirror, filetype):
     title = author + ' - ' + title
     download(download_url, title)
 
+def mirror3(url):
+    '''
+    A function to interface with the 3rd mirror
+    (https://3lib.net/). The title is obtained by
+    scraping the pages.
+
+    Parameters:
+    url(str): This is the url of the page which contains the download url of the book.
+    '''
+    domain = url[:url.find('/md5')]
+    r = requests.get(url)
+    s = BeautifulSoup(r.text, 'html.parser')
+    l = urljoin(domain, s.find('a',{'style':'text-decoration: underline;'}).get('href'))
+    r = requests.get(l)
+    s = BeautifulSoup(r.text, 'html.parser')
+    title = s.find('h1', {'itemprop':'name','style':'color: #000; line-height: 140%;'}).text.lstrip().rstrip()
+    author = s.find('a', {'itemprop':'author','title':"Find all the author's books"}).text
+    filetype=''
+    try:
+        filetype = s.find('a',{'class':'btn btn-primary dlButton addDownloadedBook'}).text.lstrip().rstrip()
+        download_url = urljoin(domain,s.find('a',{'class':'btn btn-primary dlButton addDownloadedBook'}).get('href'))
+        filetype = filetype[filetype.find('(')+1:filetype.find(',')]
+        title = title + f' ({author})' + '(zlib.org).' + filetype
+        download(download_url, title)
+    except: print('Could not download file as it is deleted. Please try from another mirror.');return False
 
 def download(url, title):
     '''
