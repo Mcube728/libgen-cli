@@ -17,7 +17,7 @@ headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/5
 
 def searchBooks(search_term, column, page):
     '''
-    This method makes the request to libgen with the needed
+    This function makes the request to libgen with the needed
     parameters like the search term, column(author, title,
     extension etc) and page of the search query. 
 
@@ -50,7 +50,7 @@ def searchBooks(search_term, column, page):
 
 def parseBooks(books):
     '''
-    This method parses the book table obtained from the searchBooks
+    This function parses the book table obtained from the searchBooks
     method. It obtains book metadata like the identification number, 
     title, author, language, file type of the book, MD5 hash and the
     download mirrors of the book.
@@ -59,8 +59,8 @@ def parseBooks(books):
     books(bs4.element.Tag): The table containing books 
 
     Returns: 
-    table(tuple): The search results to be printed in the terminal
-    download_mirror: A list containing dictionaries of the MD5 hash and the download mirrors of each book
+    table(list): The search results to be printed in the terminal
+    download_mirror(list): A list containing dictionaries of the MD5 hash and the download mirrors of each book
     '''
     table = []
     download_Mirrors = []
@@ -99,6 +99,17 @@ def parseBooks(books):
 
 
 def pickBook(page, table, numberofbooks, mirrors):
+    '''
+    Pretty print the search results in the terminal, 
+    and browse the search results. The user makes their
+    choice by typing the ID of the book they want.
+
+    Parameters: 
+    page(int): The page of the search result
+    table(list): The list of the books to be pretty printed in the terminal
+    numberofbooks(int): The total number of books in the search result
+    mirrors(list): A list containing dictionaries of the MD5 hash and the download mirrors of each book
+    '''
     headers = ['ID', 'Author', 'Title', 'Publisher', 'Year', 'Language', 'Extension']
     print(tabulate(table[(page - 1) * 25:page * 25], headers))
     if numberofbooks == len(table):
@@ -135,6 +146,15 @@ def pickBook(page, table, numberofbooks, mirrors):
 
 
 def getBook(mirrors):
+    '''
+    This functions presents a choice of the availalble
+    mirrors to the user. The user can make a numeric 
+    choice to select a mirror, and the needed functions
+    for the selected mirrors will be called. 
+
+    Parameters: 
+    mirrors(dict):  
+    '''
     print(f'=====\nThis book can be downloaded from these mirrors:')
     m = mirrors['Mirrors']
     for key, value in m.items():
@@ -146,6 +166,14 @@ def getBook(mirrors):
         mirror2(m[mirror], mirrors['File type'])
 
 def mirror1(mirror):
+    '''
+    A function to interface with the first mirror, 
+    http://library.lol/. The title to save the book is 
+    obtained by decoding the download url of the book.
+
+    Parameters:
+    mirror(str): This is the url of the page which contains the download url of the book. 
+    '''
     r = requests.get(mirror)
     s = BeautifulSoup(r.text, 'html.parser')
     download_url = s.find('td', {'id':'info'}).find('h2').find('a').get('href')
@@ -155,17 +183,38 @@ def mirror1(mirror):
     download(download_url, title)
 
 def mirror2(mirror, filetype):
+    '''
+    A function to interface with the second mirror, 
+    https://libgen.rocks/ aka https://cdn1.booksdl.org/. 
+    The title to save the book is obtained by scraping the 
+    author and title, and then joining the 2 together along
+    with the filetype.
+
+    Parameters:
+    mirror(str): This is the url of the page which contains the download url of the book.
+    filetype(str): Unlike the first mirror, which has the filetype in the mirror in the url, the filetype is a parameter so the title can contain a filetype to save the book.
+    '''
     domain = mirror[:mirror.rfind('/')]
     r = requests.get(mirror)
     s = BeautifulSoup(r.text, 'html.parser')
     download_url = s.find('td', {'align':'center'}).find('a').get('href')
     download_url = urljoin(domain, download_url)
-    title = str(s.find_all('td')[7])
-    title = title[11:title.find("<br/>")]+f'.{filetype}'
+    d = str(s.find_all('td')[7])
+    title = d[11:d.find("<br/>")]+f'.{filetype}'
+    author = d[d.find('Author(s): '):];author = author[11:author.find('<br/>')]
+    title = author + ' - ' + title
     download(download_url, title)
 
 
 def download(url, title):
+    '''
+    A function that when given a download url and
+    book title, downloads the book. 
+
+    Parameters:
+    url(str): The URL which points to the book that can be downloaded
+    title(str): The title of the book, which will also be the filename
+    '''
     r = requests.get(url, stream=True)
     total_size= int(r.headers.get('content-length', 0))
     block = 1024 #1 Kibibyte
