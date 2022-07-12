@@ -24,5 +24,5 @@ options:
   -p, --publisher  get books from the queried publisher
 ```
 A screenshot:
-![A Screenshot of the interface](http://github.com/Mcube728/libgen-cli/interface.png)
+![A Screenshot of the interface](http://github.com/Mcube728/libgen-cli/blob/main/interface.png)
 (I have taken a bit of inspiration from <a href="https://github.com/NadalVRoMa/PyLibGen">Nadal Rodrigo's</a> python script!)
