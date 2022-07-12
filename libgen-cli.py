@@ -1,3 +1,4 @@
+import argparse
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -254,9 +255,22 @@ def download(url, title):
         print("ERROR, something went wrong")
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='A simple python script to download books off https://gen.lib.rus.ec/')
+    col = parser.add_mutually_exclusive_group()
+    parser.add_argument('search', nargs='+', help='search term')
+    col.add_argument('-t', '--title', action='store_true', help='get books with the queried title')
+    col.add_argument('-a', '--author', action='store_true', help='get books written by the queried author')
+    col.add_argument('-p', '--publisher', action='store_true', help='get books from the queried publisher')
+    args = parser.parse_args()
+    search_term = ' '.join(args.search)
+    arguments = [(args.title, 'title'),(args.author, 'author'),(args.publisher, 'publisher')]
+    sel_column = 'def'
+    for arg in arguments:
+        if arg[0]:
+            sel_column = arg[1]
+    
     books = []
     mirrors = []
-    search_term = input('What do you want to search for? ')
     page = 1
     sel_column = 'def'
     '''for arg in search_arguments:
