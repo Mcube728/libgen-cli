@@ -128,15 +128,9 @@ def pickBook(page, table, numberofbooks, mirrors):
                         print(f'{key}: {value}')
                     while True:
                         choice = input('Is this the book you are looking for?(yes/no or y/n) ').lower()
-                        if choice == 'yes':
+                        if choice == 'yes' or 'y' or '':
                             getBook(i);return False
-                        elif choice == 'y':
-                            getBook(i);return False
-                        elif not choice: 
-                            getBook(i);return False
-                        elif choice == 'no':
-                            break
-                        elif choice == 'n':
+                        elif choice == 'no' or 'n':
                             break
                         else:
                             print('Please enter yes/no or y/n.')
@@ -171,6 +165,8 @@ def getBook(mirrors):
         mirror1(m[mirror])
     elif mirror == 2:
         mirror2(m[mirror], mirrors['File type'])
+    elif mirror == 2:
+        mirror2(m[mirror])
 
 def mirror1(mirror):
     '''
