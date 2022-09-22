@@ -8,58 +8,62 @@ from urllib.parse import unquote
 from urllib.parse import urljoin
 from tqdm import tqdm
 
-MAX_CHAR_AUTH = 25 # Maximum characters displayed for the author. Change according to N_AUTHORS.
-MAX_CHAR_TITLE = 50 # Maximum characters displayed for the book title
-MAX_CHAR_PUB = 20 # Maximum characters displayed for the publisher.
+# Maximum characters displayed for the author. Change according to N_AUTHORS.
+MAX_CHAR_AUTH = 25
+MAX_CHAR_TITLE = 50  # Maximum characters displayed for the book title
+MAX_CHAR_PUB = 20  # Maximum characters displayed for the publisher.
 
 base = 'https://gen.lib.rus.ec/search.php?&'
-headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
 
 
 def searchBooks(search_term, column, page):
     '''
     This function makes the request to libgen with the needed
     parameters like the search term, column(author, title,
-    extension etc) and page of the search query. 
+    extension etc) and page of the search query.
 
     Parameters:
     search_term(str): The search term for the libgen query
     column(str): The column in which to search for, like author or extension etc.
     page(int): The page of the query
 
-    Returns: 
+    Returns:
     books(bs4.element.Tag): The table of the query containing the books
     numberofbooks(int): The number of files in the search(only returned if the page is 1)
     '''
-    parameters = urlencode({'req':search_term, 'column':column, 'page':page})
+    parameters = urlencode(
+        {'req': search_term, 'column': column, 'page': page})
     url = base + parameters
     r = requests.get(url, headers=headers)
     s = BeautifulSoup(r.text, 'lxml')
-    #numberofbooks = None
+    # numberofbooks = None
     if page == 1:
-        numberofbooks = s.find('font', {'color': 'grey', 'size': '1'}).text.split(' ')[0]
+        numberofbooks = s.find(
+            'font', {'color': 'grey', 'size': '1'}).text.split(' ')[0]
         print(f'{numberofbooks} books found')
     print(f'Now displaying page {page}')
-    table = s.find('table', {'class':'c'})
+    table = s.find('table', {'class': 'c'})
     books = table.find_all('tr')
     books = books[1:]
     if page == 1:
-        return(books, numberofbooks)
+        return (books, numberofbooks)
     else:
-        return(books)
+        return (books)
 
 
 def parseBooks(books):
     '''
     This function parses the book table obtained from the searchBooks
-    method. It obtains book metadata like the identification number, 
+    method. It obtains book metadata like the identification number,
     title, author, language, file type of the book, MD5 hash and the
     download mirrors of the book.
 
     Parameters:
-    books(bs4.element.Tag): The table containing books 
+    books(bs4.element.Tag): The table containing books
 
-    Returns: 
+    Returns:
     table(list): The search results to be printed in the terminal
     download_mirror(list): A list containing dictionaries of the MD5 hash and the download mirrors of each book
     '''
@@ -77,7 +81,7 @@ def parseBooks(books):
         lang = attributes[6].text
         extension = attributes[8].text
         # Handle the mirrors
-        mirror_list = {}  
+        mirror_list = {}
         for j in range(9, 13):
             mirror = j - 8  # So that the mirror list selection choices can start from 1
             mirror_list[mirror] = attributes[j].a.attrs['href']
@@ -86,85 +90,102 @@ def parseBooks(books):
         for j in attributes[2].find_all('a'):
             if j.get('href').startswith('book/index.php?md5='):
                 md5 = j.get('href').partition('book/index.php?md5=')[2]
-        book = (identifier, author, smol_title, publisher, year, lang, extension)   # Results that will be printed in the terminal
+        book = (identifier, author, smol_title, publisher, year, lang,
+                extension)   # Results that will be printed in the terminal
         book_download = {
-            'ID':identifier, 
-            'Title': title, 
+            'ID': identifier,
+            'Title': title,
             'File type': extension,
-            'Mirrors': mirror_list, 
+            'Mirrors': mirror_list,
             'MD5': md5
         }   # Book metadata and mirror list for downloading the book
         table.append(book)
         download_Mirrors.append(book_download)
-    return(table, download_Mirrors)
+    return (table, download_Mirrors)
 
 
 def pickBook(page, table, numberofbooks, mirrors):
     '''
-    Pretty print the search results in the terminal, 
+    Pretty print the search results in the terminal,
     and browse the search results. The user makes their
     choice by typing the ID of the book they want.
 
-    Parameters: 
+    Parameters:
     page(int): The page of the search result
     table(list): The list of the books to be pretty printed in the terminal
     numberofbooks(int): The total number of books in the search result
     mirrors(list): A list containing dictionaries of the MD5 hash and the download mirrors of each book
     '''
-    headers = ['ID', 'Author', 'Title', 'Publisher', 'Year', 'Language', 'Extension']
+    headers = ['ID', 'Author', 'Title', 'Publisher',
+               'Year', 'Language', 'Extension']
     print(tabulate(table[(page - 1) * 25:page * 25], headers))
     if numberofbooks == len(table):
         print(f'\n\nYou have reached the end of the list')
     while True:
         if numberofbooks == len(table):
-            action = input('\nType the ID of the book you want to download or press q to quit: ')
+            action = input(
+                '\nType the ID of the book you want to download or press q to quit: ')
         else:
-            action = input('\nType the ID of the book you want to download, enter to see more results, or press q to quit: ')
-        
+            action = input(
+                '\nType the ID of the book you want to download, enter to see more results, or press q to quit: ')
+
         if action.isnumeric():
             for i in mirrors:
                 if action in i['ID']:
                     for key, value in i.items():
                         print(f'{key}: {value}')
                     while True:
-                        choice = input('Is this the book you are looking for?(yes/no) ').lower()
-                        if choice == 'yes':
-                            getBook(i);return False
-                        elif choice == 'no':
+                        choice = input(
+                            'Is this the book you are looking for?(yes/y or no/n ) ').lower()
+                        if choice == 'yes' or choice == '' or choice == 'y':
+                            getBook(i)
+                            return False
+                        elif choice == 'no' or choice == 'n':
                             break
+
                         else:
-                            print('Please type yes or no.')
+                            print('Please type yes/y or no/n.')
         elif action == 'q' or action == 'Q':  # Quit
             print('Exiting...')
-            return(False)
-        
+            return (False)
+
         elif not action:
             if numberofbooks == len(table):
                 print('Not a valid option')
                 continue
             else:
-                return(True)
+                return (True)
 
 
 def getBook(mirrors):
     '''
     This functions presents a choice of the availalble
-    mirrors to the user. The user can make a numeric 
+    mirrors to the user. The user can make a numeric
     choice to select a mirror, and the needed functions
-    for the selected mirrors will be called. 
+    for the selected mirrors will be called.
 
-    Parameters: 
-    mirrors(dict):  
+    Parameters:
+    mirrors(dict):
     '''
     print(f'=====\nThis book can be downloaded from these mirrors:')
     m = mirrors['Mirrors']
     for key, value in m.items():
         print(f'{key}: {value}')
-    mirror = int(input('What mirror do you want to choose? '))
-    if mirror == 1:
-        mirror1(m[mirror])
-    elif mirror == 2:
-        mirror2(m[mirror], mirrors['File type'])
+    mirror = input('What mirror do you want to choose? ')
+    if mirror == '' or int(mirror) == 1:
+        mirror1(m[1])
+    elif int(mirror) == 2:
+        mirror2(m[int(mirror)], mirrors['File type'])
+    elif int(mirror) == 3:
+        mirror2(m[int(mirror)], mirrors['File type'])
+    elif int(mirror) == 3:
+        mirror2(m[int(mirror)], mirrors['File type'])
+    elif int(mirror) == 4:
+        mirror2(m[int(mirror)], mirrors['File type'])
+
+    else:
+        print("please type select valid mirror")
+
 
 def mirror1(mirror):
     '''
@@ -177,11 +198,13 @@ def mirror1(mirror):
     '''
     r = requests.get(mirror)
     s = BeautifulSoup(r.text, 'html.parser')
-    download_url = s.find('td', {'id':'info'}).find('h2').find('a').get('href')
+    download_url = s.find('td', {'id': 'info'}).find(
+        'h2').find('a').get('href')
     title = unquote(download_url)
     idx = title.rfind('/')
     title = title[idx+1:]
     download(download_url, title)
+
 
 def mirror2(mirror, filetype):
     '''
@@ -198,13 +221,15 @@ def mirror2(mirror, filetype):
     domain = mirror[:mirror.rfind('/')]
     r = requests.get(mirror)
     s = BeautifulSoup(r.text, 'html.parser')
-    download_url = s.find('td', {'align':'center'}).find('a').get('href')
+    download_url = s.find('td', {'align': 'center'}).find('a').get('href')
     download_url = urljoin(domain, download_url)
     d = str(s.find_all('td')[7])
     title = d[11:d.find("<br/>")]+f'.{filetype}'
-    author = d[d.find('Author(s): '):];author = author[11:author.find('<br/>')]
+    author = d[d.find('Author(s): '):]
+    author = author[11:author.find('<br/>')]
     title = author + ' - ' + title
     download(download_url, title)
+
 
 def mirror3(url):
     '''
@@ -218,19 +243,27 @@ def mirror3(url):
     domain = url[:url.find('/md5')]
     r = requests.get(url)
     s = BeautifulSoup(r.text, 'html.parser')
-    l = urljoin(domain, s.find('a',{'style':'text-decoration: underline;'}).get('href'))
+    l = urljoin(domain, s.find(
+        'a', {'style': 'text-decoration: underline;'}).get('href'))
     r = requests.get(l)
     s = BeautifulSoup(r.text, 'html.parser')
-    title = s.find('h1', {'itemprop':'name','style':'color: #000; line-height: 140%;'}).text.lstrip().rstrip()
-    author = s.find('a', {'itemprop':'author','title':"Find all the author's books"}).text
-    filetype=''
+    title = s.find('h1', {
+                   'itemprop': 'name', 'style': 'color: #000; line-height: 140%;'}).text.lstrip().rstrip()
+    author = s.find('a', {'itemprop': 'author',
+                    'title': "Find all the author's books"}).text
+    filetype = ''
     try:
-        filetype = s.find('a',{'class':'btn btn-primary dlButton addDownloadedBook'}).text.lstrip().rstrip()
-        download_url = urljoin(domain,s.find('a',{'class':'btn btn-primary dlButton addDownloadedBook'}).get('href'))
+        filetype = s.find(
+            'a', {'class': 'btn btn-primary dlButton addDownloadedBook'}).text.lstrip().rstrip()
+        download_url = urljoin(domain, s.find(
+            'a', {'class': 'btn btn-primary dlButton addDownloadedBook'}).get('href'))
         filetype = filetype[filetype.find('(')+1:filetype.find(',')]
         title = title + f' ({author})' + '(zlib.org).' + filetype
         download(download_url, title)
-    except: print('Could not download file as it is deleted. Please try from another mirror.');return False
+    except:
+        print('Could not download file as it is deleted. Please try from another mirror.')
+        return False
+
 
 def download(url, title):
     '''
@@ -242,8 +275,8 @@ def download(url, title):
     title(str): The title of the book, which will also be the filename
     '''
     r = requests.get(url, stream=True)
-    total_size= int(r.headers.get('content-length', 0))
-    block = 1024 #1 Kibibyte
+    total_size = int(r.headers.get('content-length', 0))
+    block = 1024  # 1 Kibibyte
     print(f'=====\nDownloading {title}')
     progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
     with open(title, 'wb') as file:
@@ -254,21 +287,27 @@ def download(url, title):
     if total_size != 0 and progress_bar.n != total_size:
         print("ERROR, something went wrong")
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='A simple python script to download books off https://gen.lib.rus.ec/')
+    parser = argparse.ArgumentParser(
+        description='A simple python script to download books off https://gen.lib.rus.ec/')
     col = parser.add_mutually_exclusive_group()
     parser.add_argument('search', nargs='+', help='search term')
-    col.add_argument('-t', '--title', action='store_true', help='get books with the queried title')
-    col.add_argument('-a', '--author', action='store_true', help='get books written by the queried author')
-    col.add_argument('-p', '--publisher', action='store_true', help='get books from the queried publisher')
+    col.add_argument('-t', '--title', action='store_true',
+                     help='get books with the queried title')
+    col.add_argument('-a', '--author', action='store_true',
+                     help='get books written by the queried author')
+    col.add_argument('-p', '--publisher', action='store_true',
+                     help='get books from the queried publisher')
     args = parser.parse_args()
     search_term = ' '.join(args.search)
-    arguments = [(args.title, 'title'),(args.author, 'author'),(args.publisher, 'publisher')]
+    arguments = [(args.title, 'title'), (args.author, 'author'),
+                 (args.publisher, 'publisher')]
     sel_column = 'def'
     for arg in arguments:
         if arg[0]:
             sel_column = arg[1]
-    
+
     books = []
     mirrors = []
     page = 1
@@ -279,7 +318,8 @@ if __name__ == '__main__':
     get_next_page = True
     while get_next_page:
         if page == 1:
-            raw_books, numberofbooks = searchBooks(search_term, sel_column, page)
+            raw_books, numberofbooks = searchBooks(
+                search_term, sel_column, page)
         else:
             raw_books = searchBooks(search_term, sel_column, page)
 
