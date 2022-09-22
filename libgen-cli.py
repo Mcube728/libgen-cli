@@ -127,13 +127,19 @@ def pickBook(page, table, numberofbooks, mirrors):
                     for key, value in i.items():
                         print(f'{key}: {value}')
                     while True:
-                        choice = input('Is this the book you are looking for?(yes/no) ').lower()
+                        choice = input('Is this the book you are looking for?(yes/no or y/n) ').lower()
                         if choice == 'yes':
+                            getBook(i);return False
+                        elif choice == 'y':
+                            getBook(i);return False
+                        elif not choice: 
                             getBook(i);return False
                         elif choice == 'no':
                             break
+                        elif choice == 'n':
+                            break
                         else:
-                            print('Please type yes or no.')
+                            print('Please enter yes/no or y/n.')
         elif action == 'q' or action == 'Q':  # Quit
             print('Exiting...')
             return(False)
