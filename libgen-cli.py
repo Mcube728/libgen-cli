@@ -91,8 +91,8 @@ def parseBooks(books):
             'ID':identifier, 
             'Title': title, 
             'File type': extension,
-            'Mirrors': mirror_list, 
-            'MD5': md5
+            'MD5': md5,
+            'Mirrors': mirror_list
         }   # Book metadata and mirror list for downloading the book
         table.append(book)
         download_Mirrors.append(book_download)
@@ -125,12 +125,17 @@ def pickBook(page, table, numberofbooks, mirrors):
             for i in mirrors:
                 if action in i['ID']:
                     for key, value in i.items():
-                        print(f'{key}: {value}')
+                        if key == "Mirrors":
+                            print(f"{key}:")
+                            for k,v in value.items():
+                                print(f"\t{k}: {v}")
+                        else:
+                            print(f'{key}: {value}')
                     while True:
-                        choice = input('Is this the book you are looking for?(yes/no or y/n) ').lower()
-                        if choice == 'yes' or 'y' or '':
+                        choice = input('\nIs this the book you are looking for?(yes/no or y/n) ').lower()
+                        if choice == 'yes' or choice == 'y' or choice == '':
                             getBook(i);return False
-                        elif choice == 'no' or 'n':
+                        elif choice == 'no' or choice == 'n':
                             break
                         else:
                             print('Please enter yes/no or y/n.')
@@ -156,7 +161,7 @@ def getBook(mirrors):
     Parameters: 
     mirrors(dict):  
     '''
-    print(f'=====\nThis book can be downloaded from these mirrors:')
+    print(f'==========\n\nThis book can be downloaded from these mirrors:')
     m = mirrors['Mirrors']
     for key, value in m.items():
         print(f'{key}: {value}')
@@ -165,8 +170,10 @@ def getBook(mirrors):
         mirror1(m[mirror])
     elif mirror == 2:
         mirror2(m[mirror], mirrors['File type'])
-    elif mirror == 2:
-        mirror2(m[mirror])
+    elif mirror == 3:
+        mirror3(m[mirror])
+    else:
+        print("\nPlease enter a valid mirror!")
 
 def mirror1(mirror):
     '''
@@ -246,7 +253,7 @@ def download(url, title):
     r = requests.get(url, stream=True)
     total_size= int(r.headers.get('content-length', 0))
     block = 1024 #1 Kibibyte
-    print(f'=====\nDownloading {title}')
+    print(f'=====\n\nDownloading {title}')
     progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
     with open(title, 'wb') as file:
         for data in r.iter_content(block):
