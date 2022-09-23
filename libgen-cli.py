@@ -270,9 +270,10 @@ if __name__ == '__main__':
     col.add_argument('-t', '--title', action='store_true', help='get books with the queried title')
     col.add_argument('-a', '--author', action='store_true', help='get books written by the queried author')
     col.add_argument('-p', '--publisher', action='store_true', help='get books from the queried publisher')
+    col.add_argument('-i', '--isbn', action='store_true', help='get books with the queried ISBN')
     args = parser.parse_args()
     search_term = ' '.join(args.search)
-    arguments = [(args.title, 'title'),(args.author, 'author'),(args.publisher, 'publisher')]
+    arguments = [(args.title, 'title'),(args.author, 'author'),(args.publisher, 'publisher'), (args.isbn, 'identifier')]
     sel_column = 'def'
     for arg in arguments:
         if arg[0]:
