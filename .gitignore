@@ -3,3 +3,6 @@ env/
 
 # __pycache__
 **/__pycache__/
+
+# Configuration Files
+config.py

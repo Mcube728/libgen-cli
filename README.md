@@ -8,6 +8,11 @@ You can install the dependencies like so:
 pip install -r requirements.txt
 ```
 ## Usage
+First a file config.py and configure the settings in it. This allows for optimal execution of the script!!! This is how the configure.py file looks like: 
+```
+DOWNLOAD_PATH = "/path/to/download/directory/"  # Put your download directory here!!
+```
+libgen-cli.py help:
 ```
 libgen-cli.py --help
 usage: libgen-cli.py [-h] [-t | -a | -p] search [search ...]        

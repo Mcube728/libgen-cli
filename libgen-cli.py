@@ -1,3 +1,4 @@
+import os
 import argparse
 import time
 import requests
@@ -7,6 +8,7 @@ from tabulate import tabulate
 from urllib.parse import unquote
 from urllib.parse import urljoin
 from tqdm import tqdm
+from config import *
 
 MAX_CHAR_AUTH = 25 # Maximum characters displayed for the author. Change according to N_AUTHORS.
 MAX_CHAR_TITLE = 50 # Maximum characters displayed for the book title
@@ -78,7 +80,7 @@ def parseBooks(books):
         extension = attributes[8].text
         # Handle the mirrors
         mirror_list = {}  
-        for j in range(9, 13):
+        for j in range(9, 12):
             mirror = j - 8  # So that the mirror list selection choices can start from 1
             mirror_list[mirror] = attributes[j].a.attrs['href']
         # Handle the MD5 hash
@@ -250,18 +252,24 @@ def download(url, title):
     url(str): The URL which points to the book that can be downloaded
     title(str): The title of the book, which will also be the filename
     '''
-    r = requests.get(url, stream=True)
-    total_size= int(r.headers.get('content-length', 0))
-    block = 1024 #1 Kibibyte
-    print(f'=====\n\nDownloading {title}')
-    progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
-    with open(title, 'wb') as file:
-        for data in r.iter_content(block):
-            progress_bar.update(len(data))
-            file.write(data)
-    progress_bar.close()
-    if total_size != 0 and progress_bar.n != total_size:
-        print("ERROR, something went wrong")
+    if os.path.exists(DOWNLOAD_PATH) and os.path.isdir(DOWNLOAD_PATH):
+        r = requests.get(url, stream=True)
+        total_size= int(r.headers.get('content-length', 0))
+        block = 1024 #1 Kibibyte
+        print(f'=====\n\nDownloading {title}')
+        path = f"{DOWNLOAD_PATH}/{title}"
+        progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
+        with open(path, 'wb') as file:
+            for data in r.iter_content(block):
+                progress_bar.update(len(data))
+                file.write(data)
+        progress_bar.close()
+        if total_size != 0 and progress_bar.n != total_size:
+            print("ERROR, something went wrong")
+    elif os.path.isfile(DOWNLOAD_PATH):
+        print('The download path is not a directory. Change it in settings.py')
+    else:
+        print('The download path does not exist. Change it in settings.py')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='A simple python script to download books off https://gen.lib.rus.ec/')
@@ -282,7 +290,6 @@ if __name__ == '__main__':
     books = []
     mirrors = []
     page = 1
-    sel_column = 'def'
     '''for arg in search_arguments:
         if arg[0]:
             sel_column = arg[1]'''
